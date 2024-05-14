@@ -1,0 +1,10 @@
+matplotlib
+numpy~=1.21.2
+Pillow~=8.4.0
+torch
+torchvision~=0.11.2
+tqdm~=4.62.3
+wandb
+pydicom~=2.2.2
+opencv-contrib-python~=4.9.0.80
+natsort~=7.0.1
