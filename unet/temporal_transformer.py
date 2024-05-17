@@ -61,15 +61,7 @@ class TemporalTransformer(nn.Module):
         # self.cls_token = nn.Parameter(torch.randn(1, 1, 1, 1, hidden_dim))
         self.pos_embedding = nn.Parameter(
             torch.randn(1, 1, 1, max_T, 1))
-
-        '''spatial transformer'''
-        # self.spatial_transformer = nn.Sequential(
-        #     *[AttentionBlock(input_dim, hidden_dim, num_heads, dropout=dropout) for _ in range(num_layers)])
-        # self.spatial_pos_embedding = nn.Parameter(torch.randn(1, 1, H, W))
-        # self.mlp_head = nn.Sequential(
-        #     nn.LayerNorm(hidden_dim),
-        #     nn.Linear(hidden_dim, input_dim)
-        # )
+        
 
     def forward(self, x):
         """
@@ -103,22 +95,6 @@ class TemporalTransformer(nn.Module):
         x = x.view(x.shape[0], B, H, W, -1)
 
         x = x[-1].permute(0, 3, 1, 2) # B, C, H, W; We are taking the last time point as output
-
-        '''spatial transformer'''
-        # spatial_pos_embedding = self.spatial_pos_embedding.repeat(B, hidden_C, 1, 1)
-        # x = x + spatial_pos_embedding
-        # # Apply Transforrmer
-        # x = self.dropout(x)
-        # x = x.permute(2, 3, 0, 1) # H, W, B, C
-        # H, W, B, _ = x.shape
-        # x = x.view(H*W, B, -1)  # H*W, B, C
-        # x = self.spatial_transformer(x)
-        # x = x.view(H, W, B, -1)
-        # x = x.permute(2, 0, 1, 3)
-
-        # x = x.permute(0, 2, 3, 1)
-        # x = self.mlp_head(x)  # B, H, W, C
-        # x = x.permute(0, 3, 1, 2) # B, C, H, W
 
         return x  
 

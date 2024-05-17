@@ -8,7 +8,7 @@ import os
 import numpy as np
 from pathlib import Path
 import pandas as pd
-import input_files as I
+import input_paths as I
 import time
 
 criterion = nn.CrossEntropyLoss()

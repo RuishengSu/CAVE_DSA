@@ -54,9 +54,8 @@ def load_and_preprocess_dicom(img_path):
         if seq.shape[0] > 2:
             cum_time_vector, seq = cum_time_vector[1:], seq[1:]
             desired_frame_interval = 1000  # ms
-            if patient_id != "R0365":  # The frame time info in dicom header of this patient is wrong.
-                interp = interp1d(cum_time_vector, seq, axis=0)
-                seq = interp(np.arange(cum_time_vector[0], cum_time_vector[-1], desired_frame_interval))
+            interp = interp1d(cum_time_vector, seq, axis=0)
+            seq = interp(np.arange(cum_time_vector[0], cum_time_vector[-1], desired_frame_interval))
 
     MAX_LEN = 20  # Shorten unnecessarily long sequences.
     if seq.shape[0] > MAX_LEN:
@@ -95,28 +94,15 @@ def load_image(img_path, img_size, img_type):
 
     return img
 
-
-def predict(net, img, out_img_path, device='cuda'):
-    net.eval()
-    img = torch.as_tensor(img.copy()).float().contiguous().to(device=device, dtype=torch.float32)
-    img = torch.unsqueeze(img, 0)
-    with torch.no_grad():
-        masks_pred = net(img)
-        mask_pred = Image.fromarray(masks_pred.argmax(dim=1)[0].cpu().detach().numpy().astype(np.uint8))
-        Path(out_img_path).parent.mkdir(parents=True, exist_ok=True)
-        mask_pred.save(out_img_path)
-
 def segment(net, img, device='cuda'):
     net.eval()
     img = torch.as_tensor(img.copy()).float().contiguous().to(device=device, dtype=torch.float32)
     img = torch.unsqueeze(img, 0)
     with torch.no_grad():
-        t = time.time()
         masks_pred = net(img)
-        elapsed = time.time() - t
         masks_pred = masks_pred > 0.5
         mask_pred = masks_pred[0].cpu().detach().numpy().astype(np.uint8)
-    return mask_pred, elapsed
+    return mask_pred
 
 
 def get_args():
@@ -164,36 +150,33 @@ if __name__ == '__main__':
     logging.info(f'Model loaded from {args.model}')
 
     '''Segmentation'''
-    # test_img = load_image(args.in_img_path, args.img_size, img_type=args.input_type)
-    # predict(net, test_img, args.out_img_path, device=device)
-
-    dcm_fps = sorted(glob(os.path.join(args.in_img_path, '**', '*.nii'), recursive=True))
-    # dcm_fps = sorted(glob(os.path.join(args.in_img_path, '**', '*.dcm'), recursive=True))
-    # dcm_fps = sorted(glob(os.path.join(args.in_img_path, '**', '*.dcm'), recursive=True))
-    # df_patients = pd.read_csv("/mnt/data2/Dropbox/Ruisheng/PhD/MyManuscripts/CTA-DSA mapping/dsa_removal_annotation_Sijie.csv")
-    # df_patients = df_patients[df_patients['operation'].isna()]
-    # df_patients = df_patients[df_patients['operation'] == "temp"]
-    # patient_ids = df_patients['patient_id'].unique()
-    elapsed_per_frame_list = []
-    elapsed_per_sequence_list = []
-    for idx, fp in enumerate(dcm_fps):
-        patient_id = Path(fp).parent.name
-        # if patient_id not in patient_ids:
-        #     continue
-        logging.info(f'{idx+1}/{len(dcm_fps)}, segmenting: {fp}')
-        test_img = load_image(fp, args.img_size, img_type=args.input_type)
-        out_img_path = fp.replace(args.in_img_path, args.out_img_path).replace('.nii', '.png')
-        Path(out_img_path).parent.mkdir(parents=True, exist_ok=True)
-        out_seg, elapsed = segment(net, test_img, device=device)
-        elapsed_per_frame_list.append(elapsed/len(test_img))
-        elapsed_per_sequence_list.append(elapsed)
+    if os.path.isfile(args.in_img_path):
+        test_img = load_image(args.in_img_path, args.img_size, img_type=args.input_type)
+        Path(args.out_img_path).parent.mkdir(parents=True, exist_ok=True)
+        out_seg = segment(net, test_img, args.out_img_path, device=device)
         if args.label_type == 'av':
-            out_artery_img_path = out_img_path.replace('.png', '_artery.png')
-            out_vein_img_path = out_img_path.replace('.png', '_vein.png')
+            out_artery_img_path = args.out_img_path.replace('.png', '_artery.png')
+            out_vein_img_path = args.out_img_path.replace('.png', '_vein.png')
             Image.fromarray(out_seg[0]).save(out_artery_img_path)
             Image.fromarray(out_seg[1]).save(out_vein_img_path)
         else:
-            Image.fromarray(out_seg[0]).save(out_img_path)
-    logging.info("Average time per frame: {}\u00B1{}".format(np.mean(elapsed_per_frame_list), np.std(elapsed_per_frame_list)))
-    logging.info("Average time per sequence: {}\u00B1{}".format(np.mean(elapsed_per_sequence_list), np.std(elapsed_per_sequence_list)))
+            Image.fromarray(out_seg[0]).save(args.out_img_path)
+    elif os.path.isdir(args.in_img_path):
+        dcm_fps = sorted(glob(os.path.join(args.in_img_path, '**', '*.dcm'), recursive=True))
+        elapsed_per_frame_list = []
+        elapsed_per_sequence_list = []
+        for idx, fp in enumerate(dcm_fps):
+            patient_id = Path(fp).parent.name
+            logging.info(f'{idx+1}/{len(dcm_fps)}, segmenting: {fp}')
+            test_img = load_image(fp, args.img_size, img_type=args.input_type)
+            out_img_path = fp.replace(args.in_img_path, args.out_img_path).replace('.nii', '.png')
+            Path(out_img_path).parent.mkdir(parents=True, exist_ok=True)
+            out_seg = segment(net, test_img, device=device)
+            if args.label_type == 'av':
+                out_artery_img_path = out_img_path.replace('.png', '_artery.png')
+                out_vein_img_path = out_img_path.replace('.png', '_vein.png')
+                Image.fromarray(out_seg[0]).save(out_artery_img_path)
+                Image.fromarray(out_seg[1]).save(out_vein_img_path)
+            else:
+                Image.fromarray(out_seg[0]).save(out_img_path)
     logging.info("Done!")

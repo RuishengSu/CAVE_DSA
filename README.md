@@ -1,4 +1,4 @@
-# CAVE: Cerebral artery-vein segmentation in digital subtraction angiography
+# [CAVE: Cerebral artery-vein segmentation in digital subtraction angiography](https://doi.org/10.1016/j.compmedimag.2024.102392)
 <a href="https://pytorch.org/"><img src="https://img.shields.io/badge/PyTorch-v1.9.0-red.svg?logo=PyTorch&style=for-the-badge" /></a>
 <a href="#"><img src="https://img.shields.io/badge/python-v3.6+-blue.svg?logo=python&style=for-the-badge" /></a>
 
@@ -39,40 +39,35 @@ demonstrate the added benefit of exploiting spatio-temporal characteristics of b
 
 ```console
 > python train.py -h
-usage: train.py [-h] [--input-type INPUT_TYPE] [--label-type LABEL_TYPE]
-                [--epochs E] [--batch-size B] [--accum-batches ACCUM_BATCHES]
-                [--learning-rate LR] [--rnn RNN] [--rnn_kernel RNN_KERNEL]
-                [--load LOAD] [--img_scale IMG_SCALE] [--val-ratio VAL_RATIO]
-                [--amp]
+usage: train.py [-h] [--input-type INPUT_TYPE] [--label-type LABEL_TYPE] [--epochs E] [--batch-size B] [--accum-batches ACCUM_BATCHES] [--learning-rate LR] [--rnn RNN] [--rnn_kernel RNN_KERNEL] [--rnn_layers RNN_LAYERS] [--num_heads NUM_HEADS] [--load LOAD] [--img_scale IMG_SCALE] [--amp] [--exp_group EXP_GROUP]
 
-Baseline U-Net example: ('-i minip' will trigger the use of u-net)
-python train.py -i minip -t av --amp -b 1 -a 1 -l 0.00001 -s 0.5
+Train the UNet on images and target masks
 
-CAVE example: ('-i sequence' will trigger the usage of spatio-temporal u-net)
-python train.py -i sequence -t av --amp -b 1 -a 1 -l 0.00001 -s 0.5
-
-Train, validate and test the baseline UNet or CAVE U-Net.
-optional arguments:
+options:
   -h, --help            show this help message and exit
   --input-type INPUT_TYPE, -i INPUT_TYPE
                         Model input - minip or sequence.
   --label-type LABEL_TYPE, -t LABEL_TYPE
-                        Label type - vessel (binary) or av (4 classes).
+                        Label type - vessel (binary) or av (2 classes).
   --epochs E, -e E      Number of epochs.
   --batch-size B, -b B  Batch size.
   --accum-batches ACCUM_BATCHES, -a ACCUM_BATCHES
                         Gradient accumulation batches.
   --learning-rate LR, -l LR
                         Learning rate
-  --rnn RNN, -r RNN     RNN type: convGRU or convLSTM.
+  --rnn RNN, -r RNN     RNN type: convGRU, convLSTM, or TemporalTransformer.
   --rnn_kernel RNN_KERNEL, -k RNN_KERNEL
                         RNN kernel: 1 (1x1) or 3 (3x3).
+  --rnn_layers RNN_LAYERS, -n RNN_LAYERS
+                        Number of RNN layers.
+  --num_heads NUM_HEADS
+                        Number of transformer attention heads.
   --load LOAD, -f LOAD  Load model from a .pth file
   --img_scale IMG_SCALE, -s IMG_SCALE
                         Downscaling factor of the images
-  --val-ratio VAL_RATIO, -v VAL_RATIO
-                        Portion of the data that is used as validation (0-1)
-  --amp                 Use mixed precision
+  --amp                 Use mixed precision.
+  --exp_group EXP_GROUP, -g EXP_GROUP
+                        Set wandb group name.
 
 ```
 
@@ -84,32 +79,39 @@ Automatic mixed precision is also available with the `--amp` flag. [Mixed precis
 After training, your best model is saved to `checkpoints/checkpoint.pt`, as well as in wandb folder. 
 You can test the model on other images using the following commands.
 
-To predict a single image and save it:
+To segment a single image and save the results:
 
-`python predict.py -i image.jpg -o output.jpg --model path/to/checkpoint.pt`
+`python predict.py filepath/to/dsa_series.dcm filepath/to/output_segmentation.png filepath/to/checkpoint.pt`
+
+To segment a set of DSA series and save the results:
+
+`python predict.py dirpath/to/dsa_series dirpath/to/output_segmentations filepath/to/checkpoint.pt`
 
 ```console
 > python predict.py -h
-usage: predict.py [-h] [--model FILE] --input INPUT [INPUT ...] 
-                  [--output INPUT [INPUT ...]] [--viz] [--no-save]
-                  [--mask-threshold MASK_THRESHOLD] [--scale SCALE]
+usage: predict.py [-h] [--input-type INPUT_TYPE] [--label-type LABEL_TYPE] [--rnn RNN] [--rnn_kernel RNN_KERNEL] [--rnn_layers RNN_LAYERS] [--img_size IMG_SIZE] [--amp] in_img_path out_img_path model
 
-Predict masks from input images
+Train the UNet on images and target masks
 
-optional arguments:
+positional arguments:
+  in_img_path           Input image to be segmented.
+  out_img_path          Segmentation result image.
+  model                 Load model from a .pt file
+
+options:
   -h, --help            show this help message and exit
-  --model FILE, -m FILE
-                        Specify the file in which the model is stored
-  --input INPUT [INPUT ...], -i INPUT [INPUT ...]
-                        Filenames of input images
-  --output INPUT [INPUT ...], -o INPUT [INPUT ...]
-                        Filenames of output images
-  --viz, -v             Visualize the images as they are processed
-  --no-save, -n         Do not save the output masks
-  --mask-threshold MASK_THRESHOLD, -t MASK_THRESHOLD
-                        Minimum probability value to consider a mask pixel white
-  --scale SCALE, -s SCALE
-                        Scale factor for the input images
+  --input-type INPUT_TYPE, -i INPUT_TYPE
+                        Model input - minip or sequence.
+  --label-type LABEL_TYPE, -t LABEL_TYPE
+                        Label type - vessel (binary) or av (4 classes).
+  --rnn RNN, -r RNN     RNN type: convGRU or convLSTM.
+  --rnn_kernel RNN_KERNEL, -k RNN_KERNEL
+                        RNN kernel: 1 (1x1) or 3 (3x3).
+  --rnn_layers RNN_LAYERS, -n RNN_LAYERS
+                        Number of RNN layers.
+  --img_size IMG_SIZE, -s IMG_SIZE
+                        Targe image size for resizing images
+  --amp                 Use mixed precision.
 ```
 You can specify which model file to use with `--model MODEL.pt`.
 
