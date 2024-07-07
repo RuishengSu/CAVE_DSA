@@ -118,7 +118,7 @@ def train_net(net,
                                'val dice (epoch)={:.8f}.'.format(loss, val_loss, val_dice)
             early_stopping(val_dice)  # this function does not save the best model.
             if early_stopping.save_model:
-                torch.save(net.state_dict(), output_checkpoint)
+                torch.save(net, output_checkpoint)
                 pbar_postfix_str += " Model saved."
             if early_stopping.counter != 0:
                 pbar_postfix_str += ' EarlyStopping counter: {}/{}'.format(early_stopping.counter,
@@ -129,8 +129,7 @@ def train_net(net,
                 break
             scheduler.step(val_dice)
     # load the checkpoint of the best model
-    net.load_state_dict(torch.load(output_checkpoint))
-    torch.save(net.state_dict(), os.path.join(wandb_logging.dir, 'checkpoint.pt'))
+    torch.save(torch.load(output_checkpoint), os.path.join(wandb_logging.dir, 'checkpoint.pt'))
 
 
 def get_args():
@@ -146,7 +145,6 @@ def get_args():
     parser.add_argument('--rnn_kernel', '-k', type=int, default=1, help='RNN kernel: 1 (1x1) or 3 (3x3).')
     parser.add_argument('--rnn_layers', '-n', type=int, default=2, help='Number of RNN layers.')
     parser.add_argument('--num_heads', type=int, default=2, help='Number of transformer attention heads.')
-    parser.add_argument('--load', '-f', type=str, default=False, help='Load model from a .pth file')
     parser.add_argument('--img_scale', '-s', type=float, default=0.5, help='Downscaling factor of the images')
     parser.add_argument('--amp', action='store_true', default=False, help='Use mixed precision.')
     parser.add_argument('--exp_group', '-g', type=str, default=None, help='Set wandb group name.')
@@ -192,11 +190,6 @@ if __name__ == '__main__':
 
     net.to(device=device)
 
-    '''Whether to resume from an existing trained model.'''
-    if args.load:
-        net.load_state_dict(torch.load(args.load, map_location=device))
-        logging.info(f'Model loaded from {args.load}')
-
     '''1. Create dataset'''
     transform = A.Compose([
         A.HorizontalFlip(p=0.5),
@@ -226,7 +219,7 @@ if __name__ == '__main__':
         train_net(net=net, epochs=args.epochs, accum_batches=args.accum_batches, learning_rate=args.lr,
                   amp=args.amp, device=device, wandb_logging=experiment, output_checkpoint=ckpt)
     else:
-        net.load_state_dict(torch.load(args.load, map_location=device))
+        net = torch.load(args.load, map_location=device)
         logging.info(f'Model loaded from {args.load}')
 
     '''5. Begin validation'''

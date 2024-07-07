@@ -169,7 +169,7 @@ if __name__ == '__main__':
             patient_id = Path(fp).parent.name
             logging.info(f'{idx+1}/{len(dcm_fps)}, segmenting: {fp}')
             test_img = load_image(fp, args.img_size, img_type=args.input_type)
-            out_img_path = fp.replace(args.in_img_path, args.out_img_path).replace('.nii', '.png')
+            out_img_path = fp.replace(args.in_img_path, args.out_img_path).replace('.dcm', '.png')
             Path(out_img_path).parent.mkdir(parents=True, exist_ok=True)
             out_seg = segment(net, test_img, device=device)
             if args.label_type == 'av':

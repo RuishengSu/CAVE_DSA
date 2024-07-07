@@ -1,0 +1,27 @@
+{
+    "configurations": [
+        // Artery-vein segmentation using CAVE.
+        {
+            "name": "sequence_av_sigmoid_image512_ConvGRU_logical-star-1097",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "predict_Charles.py",
+            "console": "integratedTerminal",
+            "args": ["file_or_dir_path/to/input", "file_or_dir_path/to/output", 
+            "checkpoints/sequence_av_sigmoid_image512_ConvGRU_logical-star-1097.pt", 
+            "-i", "sequence", "-t", "av", "--amp", "--rnn", "ConvGRU", "--rnn_kernel", "3", "--rnn_layers", "2", "-s", "512"]
+        },
+
+        // Vessel segmentation using U-Net.
+        {
+            "name": "minip_vessel_sigmoid_image1024_solar-resonance-1172",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "predict_Charles.py",
+            "console": "integratedTerminal",
+            "args": ["file_or_dir_path/to/input", "file_or_dir_path/to/output", 
+            "checkpoints/minip_vessel_sigmoid_image1024_solar-resonance-1172.pt", 
+            "-i", "minip", "-t", "vessel", "--amp", "-s", "1024"]
+        }
+    ]
+}
