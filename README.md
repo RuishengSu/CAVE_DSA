@@ -26,8 +26,10 @@ conda activate {env_name}
 pip install -r requirements.txt
 ```
 4. retrieve trained models
+```bash
 git lfs install
 git lfs pull
+```
 
 ## Description
 This code implements two deep learning-based models for vessel and artery-vein segmentation in digital subtraction angiography.
