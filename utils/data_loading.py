@@ -6,9 +6,9 @@ import numpy as np
 import torch
 from PIL import Image
 from torch.utils.data import Dataset
-import dicom_reader.reader as dicom_reader
 from skimage.transform import resize
 import nibabel as nib
+import pydicom
 
 
 class BasicDataset(Dataset):
@@ -55,7 +55,7 @@ class BasicDataset(Dataset):
         elif ext in ['.pt', '.pth']:
             return torch.load(filename).numpy()
         elif ext in ['.dcm']:
-            ds = dicom_reader.read_file(filename, defer_size="1 KB", stop_before_pixels=False, force=True)
+            ds = pydicom.dcmread(filename, defer_size="1 KB", stop_before_pixels=False, force=True)
             return ds.pixel_array
         elif ext in ['.nii']:
             img_obj = nib.load(filename)

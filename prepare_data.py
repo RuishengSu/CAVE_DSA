@@ -12,8 +12,7 @@ import numpy as np
 import pandas as pd
 from natsort import natsorted
 from scipy.interpolate import interp1d
-
-import dicom_reader.reader as dicom_reader
+import pydicom
 import input_paths
 
 logger = logging.getLogger(__name__)
@@ -46,7 +45,7 @@ def prepare_sequence_and_minip(row, mode):  # mode = 'train', 'val', or 'test'
     logger.info("Convert DSA to 1 fps and save to {}".format(dst_nii_path))
 
     src_dcm = os.path.join(input_paths.raw_dicom_dir, patient_id, "{}.dcm".format(row.filename))
-    ds = dicom_reader.read_file(src_dcm, defer_size="1 KB", stop_before_pixels=False, force=True)
+    ds = pydicom.dcmread(src_dcm, defer_size="1 KB", stop_before_pixels=False, force=True)
     if 'FrameTimeVector' in ds:
         if len(ds.FrameTimeVector) != ds.NumberOfFrames:
             logger.warning("Number of Frames ({}) does not match frame time vector length ({}): {}"
