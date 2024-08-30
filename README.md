@@ -25,11 +25,17 @@ conda env create -n {env_name}
 conda activate {env_name}
 pip install -r requirements.txt
 ```
+4. retrieve trained models
+git lfs install
+git lfs pull
 
 ## Description
 This code implements two deep learning-based models for vessel and artery-vein segmentation in digital subtraction angiography.
+
 It includes one baseline method that uses U-Net on minimum intensity projection (MinIP) images of DSA, and the proposed CAVE method, which is a spatio-temporal U-Net based model that uses complete DSA series with variable frame length as input. This is the first work in deep learning based artery-vein segmentation in DSA. Via comparisons with U-Net, we
 demonstrate the added benefit of exploiting spatio-temporal characteristics of blood flow in artery-vein segmentation.
+
+Both the code and trained models are shared in this repository. To fetch the trained models, you would need git lfs.
 
 
 ## Usage
