@@ -3,13 +3,15 @@ import logging
 import sys
 from pathlib import Path
 import os
+from typing import Optional
+
 import nibabel as nib
 import numpy as np
 import torch
 from PIL import Image
 from skimage.transform import resize
 import pydicom
-from unet import UNet, TemporalUNet, ConvLSTM, ConvGRU
+from cave_dsa.unet import UNet, TemporalUNet, ConvLSTM, ConvGRU
 from glob import glob
 import pandas as pd
 from scipy.interpolate import interp1d
@@ -105,8 +107,8 @@ def segment(net, img, device='cuda'):
     return mask_pred
 
 
-def get_args():
-    parser = argparse.ArgumentParser(description='Train the UNet on images and target masks')
+def get_args(argv: Optional[list]=None):
+    parser = argparse.ArgumentParser(description='Perform inference using the trained model')
     parser.add_argument('in_img_path', help='Input image to be segmented.')
     parser.add_argument('out_img_path', default='./out.png', help='Segmentation result image.')
     parser.add_argument('model', type=str, help='Load model from a .pth file')
@@ -118,17 +120,15 @@ def get_args():
     parser.add_argument('--img_size', '-s', type=float, default=512, help='Targe image size for resizing images')
     parser.add_argument('--amp', action='store_true', default=False, help='Use mixed precision.')
 
-    return parser.parse_args()
+    if argv:
+        return parser.parse_args(args=argv)
+    else:
+        return parser.parse_args()
 
 
-if __name__ == '__main__':
-    log_filepath = 'log/{}.log'.format(Path(__file__).stem)
-    logging.basicConfig(level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S',
-                        format='%(asctime)s %(levelname)-8s %(message)s',
-                        handlers=[logging.FileHandler(log_filepath, mode='w'), logging.StreamHandler(sys.stdout)])
+def main(args):
 
     '''Global settings'''
-    args = get_args()
     assert args.input_type in ['minip', 'sequence'], "Invalid input image type"
     assert args.label_type in ['vessel', 'av'], "Invalid label type"
     n_classes = (1, 2)[args.label_type == 'av']
@@ -150,10 +150,11 @@ if __name__ == '__main__':
     logging.info(f'Model loaded from {args.model}')
 
     '''Segmentation'''
+    out_seg = None
     if os.path.isfile(args.in_img_path):
         test_img = load_image(args.in_img_path, args.img_size, img_type=args.input_type)
         Path(args.out_img_path).parent.mkdir(parents=True, exist_ok=True)
-        out_seg = segment(net, test_img, args.out_img_path, device=device)
+        out_seg = segment(net, test_img, device=device)
         if args.label_type == 'av':
             out_artery_img_path = args.out_img_path.replace('.png', '_artery.png')
             out_vein_img_path = args.out_img_path.replace('.png', '_vein.png')
@@ -180,3 +181,13 @@ if __name__ == '__main__':
             else:
                 Image.fromarray(out_seg[0]).save(out_img_path)
     logging.info("Done!")
+    return out_seg
+
+if __name__ == '__main__':
+    log_filepath = 'log/{}.log'.format(Path(__file__).stem)
+    logging.basicConfig(level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S',
+                        format='%(asctime)s %(levelname)-8s %(message)s',
+                        handlers=[logging.FileHandler(log_filepath, mode='w'), logging.StreamHandler(sys.stdout)])
+
+    args = get_args()
+    main(args)

@@ -15,11 +15,11 @@ from tqdm import tqdm
 
 import input_paths
 import wandb
-from evaluate import evaluate
-from unet import UNet, TemporalUNet, ConvLSTM, ConvGRU, TemporalTransformerUNet
-from utils.data_loading import DSADataset
-from utils.early_stopping import EarlyStopping
-from utils.metrics import dice_loss
+from cave_dsa.evaluate import evaluate
+from cave_dsa.unet import UNet, TemporalUNet, ConvLSTM, ConvGRU, TemporalTransformerUNet
+from cave_dsa.utils.data_loading import DSADataset
+from cave_dsa.utils.early_stopping import EarlyStopping
+from cave_dsa.utils.metrics import dice_loss
 
 
 # TODO: make optimizer an arg

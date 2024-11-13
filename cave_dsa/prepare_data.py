@@ -13,7 +13,7 @@ import pandas as pd
 from natsort import natsorted
 from scipy.interpolate import interp1d
 import pydicom
-import input_paths
+import cave_dsa.input_paths
 
 logger = logging.getLogger(__name__)
 

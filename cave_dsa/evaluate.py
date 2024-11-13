@@ -3,7 +3,7 @@ import torch.nn.functional as F
 from PIL import Image
 import wandb
 import torch.nn as nn
-from utils.metrics import dice_coeff, dice_loss, acc_sens_spec
+from cave_dsa.utils.metrics import dice_coeff, dice_loss, acc_sens_spec
 import os
 import numpy as np
 from pathlib import Path
